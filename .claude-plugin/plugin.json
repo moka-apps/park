@@ -1,0 +1,20 @@
+{
+  "name": "park",
+  "version": "0.1.2",
+  "description": "Save this Claude Code session and write a note for the next one. If you use herdr, /park also asks your other agent tabs to save, and can close them. /unpark picks the note up.",
+  "author": {
+    "name": "Varun Moka",
+    "url": "https://github.com/varunmoka7"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/varunmoka7/park",
+  "repository": "https://github.com/varunmoka7/park",
+  "keywords": [
+    "claude-code",
+    "claude-code-mod",
+    "claude-code-plugin",
+    "function-hooks",
+    "herdr",
+    "sessions"
+  ]
+}

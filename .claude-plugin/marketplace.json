@@ -1,0 +1,27 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "park",
+  "description": "Save this Claude Code session and write a note for the next one. If you use herdr, /park also asks your other agent tabs to save, and can close them. /unpark picks the note up.",
+  "owner": {
+    "name": "Varun Moka",
+    "url": "https://github.com/varunmoka7"
+  },
+  "plugins": [
+    {
+      "name": "park",
+      "description": "Save this Claude Code session and write a note for the next one. If you use herdr, /park also asks your other agent tabs to save, and can close them. /unpark picks the note up.",
+      "author": {
+        "name": "Varun Moka",
+        "url": "https://github.com/varunmoka7"
+      },
+      "source": "./",
+      "homepage": "https://github.com/varunmoka7/park",
+      "category": "productivity",
+      "tags": [
+        "claude-code-mod",
+        "sessions",
+        "herdr"
+      ]
+    }
+  ]
+}
