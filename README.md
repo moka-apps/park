@@ -30,7 +30,7 @@ macOS and Linux only for the full feature set. The note-finding step uses `find`
 - `/unpark` reads the newest note and follows it.
 - At session start, a short message tells you if a note from the last 3 days exists.
 
-The commands are registered in every interactive Claude Code session. There is no account or persona check.
+The commands are registered in every interactive Claude Code session.
 
 Notes go to the `.park/` folder of the project, as `.park/park-<topic>.md`. You may want to add `.park/` to your `.gitignore`.
 
