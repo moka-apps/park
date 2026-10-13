@@ -22,7 +22,7 @@ const host = (
   on: On,
   agents: Row[],
   notes: string[] = [],
-  raw?: (argv: readonly string[]) => string | undefined,
+  raw?: (argv: readonly string[]) => string | { exitCode: number } | undefined,
   env: Record<string, string> = IN_HERDR,
 ) => {
   const seen = {
@@ -61,6 +61,7 @@ const host = (
   on('process.run', (_, e) => {
     const argv = e.argv
     const forced = raw?.(argv)
+    if (typeof forced === 'object') return { value: { ...OK, stdout: '', ...forced } }
     if (forced !== undefined) return { value: { ...OK, stdout: forced } }
     if (argv[0] === 'find') return { value: { ...OK, stdout: notes.map(n => `/repo/.park/${n}\n`).join('') } }
     if (argv[3] === 'agent' && argv[4] === 'list') {
@@ -224,4 +225,39 @@ test('/park close does not close the tab this session runs in, even when another
   await seen.settle()
   expect((await run($, 'park', 'close')).text).toBe('Closed 1 saved tab.')
   expect(seen.closed).toEqual(['w1:t3'])
+})
+
+test('/park close refuses when herdr cannot list the tabs', async ($, on) => {
+  let listing = true
+  const seen = host(on, [row(1, 'claude', 'working', 'main'), row(2, 'claude', 'idle', 'reviewer')], [], argv =>
+    !listing && argv[4] === 'list' ? { exitCode: 1 } : undefined,
+  )
+  await $.session.start(START)
+  await run($, 'park')
+  await seen.settle()
+  listing = false
+  expect((await run($, 'park', 'close')).text).toContain('Not closing')
+  expect(seen.closed).toEqual([])
+})
+
+test('/park close keeps a tab when another agent in it is working again', async ($, on) => {
+  const rows = [row(1, 'claude', 'working', 'main'), row(2, 'claude', 'idle', 'reviewer')]
+  const seen = host(on, rows)
+  await $.session.start(START)
+  await run($, 'park')
+  await seen.settle()
+  rows.push({ ...row(3, 'claude', 'working', 'newcomer'), tab_id: 'w1:t2' })
+  expect((await run($, 'park', 'close')).text).toContain('Not closing')
+  expect(seen.closed).toEqual([])
+})
+
+test('/park close does not claim a tab closed when herdr failed to close it', async ($, on) => {
+  const seen = host(on, [row(1, 'claude', 'working', 'main'), row(2, 'claude', 'idle', 'reviewer')], [], argv =>
+    argv[3] === 'tab' && argv[4] === 'close' ? { exitCode: 1 } : undefined,
+  )
+  await $.session.start(START)
+  await run($, 'park')
+  await seen.settle()
+  expect((await run($, 'park', 'close')).text).toContain('Could not close')
+  expect((await run($, 'park', 'close')).text).not.toBe('Nothing parked. Run /park first.')
 })

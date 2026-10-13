@@ -53,9 +53,10 @@ async function herdr($: EngineInterface, args: readonly string[], timeoutMs?: nu
   return $.process.run(['herdr', '--session', session, ...args], timeoutMs === undefined ? undefined : { timeoutMs })
 }
 
-async function others($: EngineInterface): Promise<Agent[]> {
+// undefined means the list could not be read (no herdr, or herdr failed); [] means there are no other tabs.
+async function others($: EngineInterface): Promise<Agent[] | undefined> {
   const ran = await herdr($, ['agent', 'list'])
-  if (ran === undefined || ran.exitCode !== 0) return []
+  if (ran === undefined || ran.exitCode !== 0) return undefined
   const self = await $.env.get('HERDR_PANE_ID')
   const agents: Agent[] = JSON.parse(ran.stdout).result.agents
   ownTab = agents.find(a => a.pane_id === self)?.tab_id ?? ownTab
@@ -94,19 +95,27 @@ async function close($: EngineInterface) {
   const all = [...tabs.values()]
   if (all.length === 0) return { text: 'Nothing parked. Run /park first.' }
   // A saved tab that was given new work since is no longer safe to close.
-  const working = new Set((await others($)).filter(a => a.agent_status === 'working').map(a => a.pane_id))
-  const open = all.filter(t => t.outcome !== 'saved' || working.has(t.agent.pane_id))
+  const current = await others($)
+  if (current === undefined) return { text: 'Not closing. Could not read the tab list from herdr.' }
+  // Any agent working in a tab keeps that tab open, including one that started after /park.
+  const workingTabs = new Set(current.filter(a => a.agent_status === 'working').map(a => a.tab_id))
+  const open = all.filter(t => t.outcome !== 'saved' || workingTabs.has(t.agent.tab_id))
   if (open.length > 0) return { text: `Not closing. These tabs are not saved, or are working again:\n${lines(open)}` }
 
   const ids = new Set(all.map(t => t.agent.tab_id))
   ids.delete(ownTab ?? '')
+  const failed = new Set<string>()
   for (const id of ids) {
-    await herdr($, ['tab', 'close', id])
+    const ran = await herdr($, ['tab', 'close', id])
+    if (ran?.exitCode !== 0) failed.add(id)
   }
-  tabs = new Map()
+  // Tabs that did not close stay listed, so /park close can be run again.
+  tabs = new Map([...tabs].filter(([, t]) => failed.has(t.agent.tab_id)))
   show($)
+  const closed = ids.size - failed.size
+  const text = `Closed ${closed} saved tab${closed === 1 ? '' : 's'}.`
 
-  return { text: `Closed ${ids.size} saved tab${ids.size === 1 ? '' : 's'}.` }
+  return { text: failed.size === 0 ? text : `${text} Could not close ${failed.size}; run /park close again.` }
 }
 
 // The newest note in this project's .park folder, no older than `days`.
@@ -154,7 +163,7 @@ export const register: Register = on => {
     isParking = true
     let agents: Agent[]
     try {
-      agents = await others($)
+      agents = (await others($)) ?? []
     } catch (err) {
       isParking = false
       throw err
