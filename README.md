@@ -1,4 +1,13 @@
-# park
+<p align="center">
+  <img src="assets/banner.svg" alt="park: Save the session, write a note, pick it up tomorrow with /unpark." width="100%">
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/moka-apps/park?style=flat-square&color=111111" alt="License"></a>
+  <a href="https://github.com/moka-apps"><img src="https://img.shields.io/badge/moka--apps-Claude_Code_mod-58a6ff?style=flat-square" alt="moka-apps, Claude Code mod"></a>
+</p>
+
+---
 
 `/park` saves your work in the current Claude Code tab and writes a short note for your next session. `/unpark` reads that note and picks up where you stopped.
 
@@ -15,7 +24,7 @@ Type `/park` and Claude writes that down in a note: what is done, what is open, 
 Paste these two lines into a terminal (not into Claude):
 
 ```
-claude plugin marketplace add varunmoka7/park
+claude plugin marketplace add moka-apps/park
 claude plugin install park@park
 ```
 
